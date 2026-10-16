@@ -8,9 +8,11 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/temacteklyannayapuwka/microwatch/internal/checker"
 	"github.com/temacteklyannayapuwka/microwatch/internal/config"
+	"github.com/temacteklyannayapuwka/microwatch/internal/monitor"
 )
 
 func main() {
@@ -39,8 +41,10 @@ func main() {
 	if *interval > 0 {
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
+		var tracker monitor.Tracker
 		if err := checker.Watch(ctx, client, endpoints, *interval, func(results []checker.Result) {
 			printResults(cfg.Services, results)
+			printTransitions(&tracker, cfg.Services, results, time.Now().UTC())
 		}); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -49,6 +53,20 @@ func main() {
 	}
 	if printResults(cfg.Services, checker.CheckAll(context.Background(), client, endpoints)) {
 		os.Exit(1)
+	}
+}
+
+func printTransitions(tracker *monitor.Tracker, services []config.Service, results []checker.Result, at time.Time) {
+	for i, service := range services {
+		transition, changed := tracker.Observe(service.Name, results[i].Up, at)
+		if !changed {
+			continue
+		}
+		if transition.To.Up {
+			fmt.Printf("%s %s RECOVERED (observed downtime %s)\n", at.Format(time.RFC3339Nano), service.Name, at.Sub(transition.From.Since))
+		} else {
+			fmt.Printf("%s %s BECAME DOWN\n", at.Format(time.RFC3339Nano), service.Name)
+		}
 	}
 }
 

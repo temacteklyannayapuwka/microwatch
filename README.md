@@ -43,6 +43,13 @@ Ctrl+C or SIGTERM cancels active requests and stops the monitor. Without
 `-interval`, the command keeps its single-check behavior. Negative intervals
 are rejected.
 
+Continuous monitoring also reports state changes with UTC timestamps. A transition
+to DOWN is reported as `BECAME DOWN`; a transition to UP is reported as `RECOVERED`
+with the observed downtime. Repeated checks in the same state do not produce
+additional transition messages. The first check establishes each service's state.
+Times reflect completed check rounds, so downtime is an estimate based on polling.
+State is kept in memory and resets when the process restarts.
+
 ## Tests
 
 ```sh
