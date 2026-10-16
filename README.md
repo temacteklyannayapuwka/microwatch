@@ -28,8 +28,20 @@ HTTP 2xx responses are reported as UP; other status codes and request errors are
 reported as DOWN. Redirects are not followed. Output includes the HTTP status and
 response time when a response is received.
 
-The process exits with code 0 if all services are UP, or code 1 if configuration
-loading fails or any service is DOWN.
+In single-check mode, the process exits with code 0 if all services are UP, or
+code 1 if configuration loading fails or any service is DOWN.
+
+## Continuous monitoring
+
+```sh
+go run ./cmd/microwatch -interval 10s
+```
+
+The first round starts immediately. Each completed round is followed by the
+specified pause, so rounds never overlap. DOWN results do not stop monitoring.
+Ctrl+C or SIGTERM cancels active requests and stops the monitor. Without
+`-interval`, the command keeps its single-check behavior. Negative intervals
+are rejected.
 
 ## Tests
 
