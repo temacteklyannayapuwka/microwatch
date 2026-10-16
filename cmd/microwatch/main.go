@@ -25,9 +25,14 @@ func main() {
 			return http.ErrUseLastResponse
 		},
 	}
+	endpoints := make([]string, len(cfg.Services))
+	for i, service := range cfg.Services {
+		endpoints[i] = service.URL
+	}
+	results := checker.CheckAll(context.Background(), client, endpoints)
 	failed := false
-	for _, service := range cfg.Services {
-		result := checker.Check(context.Background(), client, service.URL)
+	for i, service := range cfg.Services {
+		result := results[i]
 		status := "UP"
 		if !result.Up {
 			status = "DOWN"

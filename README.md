@@ -22,7 +22,8 @@ go run ./cmd/microwatch -config configs/services.json
 The JSON file defines a positive `timeout` duration and a non-empty `services` list.
 Each service needs a unique `name` and an absolute HTTP or HTTPS `url`.
 
-The command validates the configuration and checks each service once, sequentially.
+The command validates the configuration and checks all services once, concurrently.
+Results are printed in configuration order after all checks finish.
 HTTP 2xx responses are reported as UP; other status codes and request errors are
 reported as DOWN. Redirects are not followed. Output includes the HTTP status and
 response time when a response is received.
