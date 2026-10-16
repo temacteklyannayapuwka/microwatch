@@ -13,6 +13,17 @@ go run ./cmd/microwatch
 go build -o bin/microwatch ./cmd/microwatch
 ```
 
+## Configuration
+
+```sh
+go run ./cmd/microwatch -config configs/services.json
+```
+
+The JSON file defines a positive `timeout` duration and a non-empty `services` list.
+Each service needs a unique `name` and an absolute HTTP or HTTPS `url`.
+
+The command validates the configuration and prints the configured services. It does not send health-check requests yet.
+
 ## License
 
 MIT

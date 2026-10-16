@@ -1,0 +1,9 @@
+{
+  "timeout": "3s",
+  "services": [
+    {
+      "name": "auth",
+      "url": "http://localhost:8081/health"
+    }
+  ]
+}
