@@ -50,6 +50,23 @@ additional transition messages. The first check establishes each service's state
 Times reflect completed check rounds, so downtime is an estimate based on polling.
 State is kept in memory and resets when the process restarts.
 
+## HTTP API
+
+```sh
+go run ./cmd/microwatch -interval 10s -listen 127.0.0.1:8080
+curl http://127.0.0.1:8080/health
+curl http://127.0.0.1:8080/status
+```
+
+The API is enabled only when `-listen` is set and requires continuous monitoring.
+`GET /health` returns HTTP 200 with `{"status":"ok"}` when the HTTP server is
+running, even if monitored services are DOWN. `GET /status` returns HTTP 200 with
+a `services` array in configuration order. Each item contains `name`, `url`, `up`,
+`status_code`, `duration_ms`, `checked_at` in UTC, and `error` for failed requests.
+Before the first completed round, the array is empty. Requests read the latest
+completed round without starting new checks. Ctrl+C and SIGTERM also shut down
+the HTTP server.
+
 ## Tests
 
 ```sh
