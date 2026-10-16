@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/temacteklyannayapuwka/microwatch/internal/checker"
 	"github.com/temacteklyannayapuwka/microwatch/internal/config"
 )
 
@@ -16,8 +19,27 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	fmt.Printf("Loaded %d services (timeout: %s)\n", len(cfg.Services), cfg.Timeout)
+	client := &http.Client{
+		Timeout: cfg.Timeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	failed := false
 	for _, service := range cfg.Services {
-		fmt.Printf("%s: %s\n", service.Name, service.URL)
+		result := checker.Check(context.Background(), client, service.URL)
+		status := "UP"
+		if !result.Up {
+			status = "DOWN"
+			failed = true
+		}
+		if result.Err != nil {
+			fmt.Printf("%s %s: %v\n", service.Name, status, result.Err)
+			continue
+		}
+		fmt.Printf("%s %s: HTTP %d (%s)\n", service.Name, status, result.StatusCode, result.Duration)
+	}
+	if failed {
+		os.Exit(1)
 	}
 }
