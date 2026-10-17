@@ -73,6 +73,10 @@ the HTTP server.
 go test ./...
 ```
 
+GitHub Actions checks formatting, runs tests with the race detector, runs
+`go vet`, and builds all packages on every push and pull request. Checks run
+on Go 1.22 and the latest stable Go release.
+
 ## License
 
 MIT
