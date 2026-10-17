@@ -1,0 +1,8 @@
+*
+!go.mod
+!cmd/
+!cmd/**
+!internal/
+!internal/**
+!configs/
+!configs/services.json

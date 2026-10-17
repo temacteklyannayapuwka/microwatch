@@ -67,6 +67,21 @@ Before the first completed round, the array is empty. Requests read the latest
 completed round without starting new checks. Ctrl+C and SIGTERM also shut down
 the HTTP server.
 
+## Docker
+
+```sh
+docker build -t microwatch .
+docker run --rm --name microwatch -p 127.0.0.1:8080:8080 \
+  --mount "type=bind,src=$(pwd)/configs/services.json,dst=/app/configs/services.json,readonly" \
+  microwatch
+```
+
+The container runs as an unprivileged user and starts continuous monitoring with
+the API on port 8080. Edit `configs/services.json` before starting it. Configured
+URLs must be reachable from the container: `localhost` refers to the container
+itself. On Docker Desktop, use `host.docker.internal` to reach a service on the
+host machine. Pass command-line flags after the image name to override defaults.
+
 ## Tests
 
 ```sh
@@ -76,6 +91,8 @@ go test ./...
 GitHub Actions checks formatting, runs tests with the race detector, runs
 `go vet`, and builds all packages on every push and pull request. Checks run
 on Go 1.22 and the latest stable Go release.
+CI also builds the Docker image, checks the running container's API and a
+successful monitored request, and verifies graceful shutdown.
 
 ## License
 

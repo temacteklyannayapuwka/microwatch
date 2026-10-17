@@ -38,3 +38,55 @@ jobs:
         run: go vet ./...
       - name: Build
         run: go build ./...
+
+  container:
+    name: Docker smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Build image
+        run: docker build -t microwatch:ci .
+      - name: Start container
+        run: |
+          printf '%s\n' '{"timeout":"1s","services":[{"name":"self","url":"http://127.0.0.1:8080/health"}]}' > "$RUNNER_TEMP/services.json"
+          docker run -d --name microwatch-ci --read-only \
+            -p 127.0.0.1:18080:8080 \
+            --mount "type=bind,src=$RUNNER_TEMP/services.json,dst=/app/configs/services.json,readonly" \
+            microwatch:ci -interval 100ms -listen 0.0.0.0:8080
+      - name: Check API
+        run: |
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.request
+
+          def get(path):
+              with urllib.request.urlopen("http://127.0.0.1:18080" + path, timeout=1) as response:
+                  return json.load(response)
+
+          for attempt in range(50):
+              try:
+                  services = get("/status")["services"]
+                  if len(services) == 1 and services[0]["up"] and services[0]["status_code"] == 200:
+                      break
+              except OSError:
+                  pass
+              time.sleep(0.2)
+          else:
+              raise SystemExit("container did not report a successful health check")
+          assert get("/health") == {"status": "ok"}
+          PY
+      - name: Check shutdown
+        run: |
+          docker stop --time 10 microwatch-ci
+          test "$(docker inspect --format '{{.State.ExitCode}}' microwatch-ci)" = "0"
+      - name: Container logs
+        if: failure()
+        run: docker logs microwatch-ci
+      - name: Cleanup
+        if: always()
+        run: docker rm -f microwatch-ci || true
